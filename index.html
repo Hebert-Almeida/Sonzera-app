@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5efe8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+  <meta name="description"
+    content="Sonzera — estúdio de teoria musical, composição e treino auditivo. Escalas, acordes, progressões, violão, círculo de quintas, ritmos brasileiros.">
+  <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' https://cdn.jsdelivr.net;
+      worker-src 'self' blob:;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data:;
+      media-src 'self' blob:;
+      connect-src 'self';
+      base-uri 'self';
+      form-action 'none';
+      frame-ancestors 'none';
+      object-src 'none';
+      ">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>Sonzera · Estúdio de Teoria Musical</title>
+
+  <script src="js/boot.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <header class="top">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5" />
+        <path d="M14 27 V13 L26 11 V25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" />
+        <circle cx="12.5" cy="27" r="2.6" fill="currentColor" />
+        <circle cx="24.5" cy="25" r="2.6" fill="currentColor" />
+      </svg>
+      <div class="brand-text">
+        <span class="brand-name">Sonzera</span>
+        <span class="brand-sub">estúdio de teoria musical</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="themeBtn" type="button" class="theme-btn" title="alternar tema"
+        aria-label="Alternar entre tema claro e escuro">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41">
+          </path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="audioBtn" type="button" class="audio-btn" title="ativar som" aria-pressed="false"
+        aria-label="Ativar ou desativar som">
+        <span class="audio-dot" aria-hidden="true"></span>
+        <span id="audioLabel">Áudio off</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="line" aria-hidden="true"></span>
+      <span>i · fundamentos da harmonia</span>
+    </div>
+    <h1 class="hero-title">
+      Do silêncio, <em>o som.</em><br>
+      Do som, a <em>forma.</em>
+    </h1>
+    <p class="hero-lead">
+      Um estúdio digital para estudar teoria, compor progressões e treinar o ouvido.
+      Escolha uma raiz, encontre a cor da escala, deixe o acorde soar.
+    </p>
+
+    <div class="hero-meta">
+      <div class="hero-root">
+        <span class="hero-root-label">raiz atual</span>
+        <div id="rootDisplay" class="root-display">C<small>nota raiz · oitava 4</small></div>
+      </div>
+      <div class="hero-controls">
+        <div class="ctrl-block">
+          <span class="ctrl-label">notação</span>
+          <div class="acc-group">
+            <button class="pill active" data-action="acc" data-acc="natural">Natural</button>
+            <button class="pill" data-action="acc" data-acc="sharp">Sustenido ♯</button>
+            <button class="pill" data-action="acc" data-acc="flat">Bemol ♭</button>
+          </div>
+        </div>
+        <div class="ctrl-block">
+          <span class="ctrl-label">oitava</span>
+          <div id="octaveRow" class="octave-row"></div>
+        </div>
+        <div class="ctrl-block">
+          <span class="ctrl-label">velocidade do som</span>
+          <div class="speed-row">
+            <input id="speedRange" type="range" min="50" max="200" value="100" step="5"
+              aria-label="Velocidade de reprodução de intervalos e acordes">
+            <span id="speedVal" class="bpm-val">1.00×</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-grid-wrap">
+      <span class="ctrl-label floating">escolha a nota</span>
+      <div id="noteGrid" class="note-grid"></div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="seções do estúdio">
+    <button class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="tab-intervals"
+      id="tabbtn-intervals" tabindex="0" data-tab="intervals"><span class="tab-num"
+        aria-hidden="true">i.</span>Intervalos</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-scales" id="tabbtn-scales"
+      tabindex="-1" data-tab="scales"><span class="tab-num" aria-hidden="true">ii.</span>Escalas</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-chords" id="tabbtn-chords"
+      tabindex="-1" data-tab="chords"><span class="tab-num" aria-hidden="true">iii.</span>Acordes</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-progressions"
+      id="tabbtn-progressions" tabindex="-1" data-tab="progressions"><span class="tab-num"
+        aria-hidden="true">iv.</span>Progressões</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-guitar" id="tabbtn-guitar"
+      tabindex="-1" data-tab="guitar"><span class="tab-num" aria-hidden="true">v.</span>Violão</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-circle" id="tabbtn-circle"
+      tabindex="-1" data-tab="circle"><span class="tab-num" aria-hidden="true">vi.</span>Círculo</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-rhythm" id="tabbtn-rhythm"
+      tabindex="-1" data-tab="rhythm"><span class="tab-num" aria-hidden="true">vii.</span>Ritmos</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-ear" id="tabbtn-ear"
+      tabindex="-1" data-tab="ear"><span class="tab-num" aria-hidden="true">viii.</span>Treino</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-composer"
+      id="tabbtn-composer" tabindex="-1" data-tab="composer"><span class="tab-num"
+        aria-hidden="true">ix.</span>Compositor</button>
+  </nav>
+
+  <main class="stage">
+
+    <section id="tab-intervals" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-intervals">
+      <header class="panel-head">
+        <h2 class="panel-title">Intervalos <span>— a distância entre duas notas</span></h2>
+        <p class="panel-desc">Toque cada cartão para ouvir o intervalo a partir da raiz. A cor indica sua qualidade:
+          justa, maior, menor, aumentada.</p>
+      </header>
+      <div id="intervalsGrid" class="intervals-grid"></div>
+
+      <header class="panel-head sub">
+        <h2 class="panel-title">Teclado <span>— mapa visual dos intervalos</span></h2>
+        <p class="panel-desc">Duas oitavas, com a raiz em destaque e cada intervalo colorido conforme sua natureza.
+          Clique em uma tecla para ouvi-la.</p>
+      </header>
+      <div class="piano-wrap">
+        <div id="piano" class="piano"></div>
+      </div>
+    </section>
+
+    <section id="tab-scales" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Escalas <span>— o vocabulário melódico</span></h2>
+        <p class="panel-desc">Cerca de duas dúzias de escalas, dos modos gregos ao exótico oriental. Cada escala traz
+          seus acordes diatônicos.</p>
+      </header>
+      <div id="scaleCatFilter" class="pill-row"></div>
+      <div id="modeGrid" class="mode-grid"></div>
+      <div id="scaleInfo" class="scale-info"></div>
+      <div id="scaleDisplay" class="scale-display"></div>
+      <div class="scale-actions">
+        <button id="playScaleUp" class="btn-ghost">↑ tocar ascendente</button>
+        <button id="playScaleDown" class="btn-ghost">↓ tocar descendente</button>
+      </div>
+
+      <header class="panel-head sub">
+        <h3 class="panel-title small">Acordes diatônicos</h3>
+        <p class="panel-desc">Os sete (ou mais) acordes que nascem de cada grau da escala. Clique para escutar.</p>
+      </header>
+      <div id="diatonicGrid" class="chords-grid"></div>
+    </section>
+
+    <section id="tab-chords" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Acordes <span>— tríades, tétrades e cores estendidas</span></h2>
+        <p class="panel-desc">28 famílias de acordes construídas a partir da raiz selecionada. Clique em qualquer cartão
+          para ouvir o acorde arpejado.</p>
+      </header>
+      <div id="chordsGrid" class="chords-grid"></div>
+    </section>
+
+    <section id="tab-progressions" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Progressões <span>— gramática das canções</span></h2>
+        <p class="panel-desc">Quatorze progressões que atravessaram séculos e gêneros — do doo-wop ao jazz moderno, do
+          blues ao Cânone de Pachelbel.</p>
+      </header>
+      <div id="progGrid" class="prog-grid"></div>
+    </section>
+
+    <section id="tab-guitar" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Violão <span>— a raiz <span id="guitarRootLabel">C</span> no braço</span></h2>
+        <p class="panel-desc">Um braço de seis cordas com todos os intervalos coloridos, posições CAGED e afinações
+          alternativas.</p>
+      </header>
+
+      <div id="tuningSelector" class="tuning-row"></div>
+      <div class="tuning-display-wrap">
+        <span class="ctrl-label">afinação</span>
+        <div id="tuningDisplay" class="tuning-display"></div>
+      </div>
+
+      <div class="fretboard-wrap">
+        <canvas id="fretboardCanvas" width="1200" height="320"></canvas>
+      </div>
+
+      <header class="panel-head sub">
+        <h3 class="panel-title small">Diagramas CAGED</h3>
+        <p class="panel-desc">Melhores digitações encontradas a partir das formas clássicas.</p>
+      </header>
+      <div id="diagramGrid" class="diagram-grid"></div>
+    </section>
+
+    <section id="tab-circle" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Círculo de Quintas <span>— o mapa da tonalidade</span></h2>
+        <p class="panel-desc">Clique em qualquer tom para navegá-lo. No anel externo, as tonalidades maiores; no
+          interno, suas menores relativas.</p>
+      </header>
+      <div class="circle-wrap">
+        <canvas id="circleCanvas" width="400" height="400"></canvas>
+        <div id="keysigPanel" class="keysig-panel"></div>
+      </div>
+    </section>
+
+    <section id="tab-rhythm" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Ritmos <span>— batidas do Brasil e do mundo</span></h2>
+        <p class="panel-desc">Do samba ao shuffle, do choro ao reggae. Escolha um ritmo para ver sua célula rítmica e
+          ouvi-lo em loop.</p>
+      </header>
+      <div id="rhythmGrid" class="rhythm-grid"></div>
+
+      <div id="rhythmPlayer" class="rhythm-player" style="display:none">
+        <div class="rhythm-player-head">
+          <div>
+            <div id="rhythmPlayerName" class="rhythm-player-name"></div>
+            <div id="rhythmPlayerInfo" class="rhythm-player-info"></div>
+          </div>
+          <button id="rhythmPlayBtn" class="btn-gold" type="button">▶ Tocar</button>
+        </div>
+        <div id="rhythmBars" class="rhythm-bars"></div>
+        <div class="bpm-row">
+          <span class="ctrl-label">bpm</span>
+          <input id="rhythmBpm" type="range" min="40" max="200" value="90" aria-label="Batidas por minuto">
+          <span id="rhythmBpmVal" class="bpm-val">90</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-ear" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Treino Auditivo <span>— afine o ouvido</span></h2>
+        <p class="panel-desc">Identifique intervalos ou qualidades de acorde. Comece simples e construa a memória
+          sonora.</p>
+      </header>
+
+      <div class="ear-controls">
+        <div class="ctrl-block">
+          <span class="ctrl-label">modo</span>
+          <div class="pill-row inline">
+            <button class="pill active" data-ear-mode="interval">Intervalos</button>
+            <button class="pill" data-ear-mode="chord">Acordes</button>
+          </div>
+        </div>
+        <div class="ctrl-block">
+          <span class="ctrl-label">direção</span>
+          <div class="pill-row inline">
+            <button class="pill active" data-ear-dir="asc">Ascendente</button>
+            <button class="pill" data-ear-dir="desc">Descendente</button>
+            <button class="pill" data-ear-dir="harm">Harmônico</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ear-stage">
+        <div class="ear-stage-head">
+          <div class="ear-score-wrap">
+            <span class="ear-score-label">acertos</span>
+            <span id="earScore" class="ear-score">0 / 0</span>
+          </div>
+          <div class="ear-actions">
+            <button id="earPlayBtn" class="btn-ghost">♫ tocar novamente</button>
+            <button id="earNext" class="btn-gold">Próxima →</button>
+            <button id="earReset" class="btn-ghost subtle">zerar</button>
+          </div>
+        </div>
+        <div id="earOptions" class="ear-options"></div>
+        <div id="earFeedback" class="ear-feedback"></div>
+      </div>
+    </section>
+
+    <section id="tab-composer" class="tab-panel" role="tabpanel">
+      <header class="panel-head">
+        <h2 class="panel-title">Compositor <span>— monte sua progressão</span></h2>
+        <p class="panel-desc">Escolha uma raiz e uma escala, clique nos acordes da paleta para encadeá-los. Toque como
+          bloco ou arpejado.</p>
+      </header>
+
+      <div class="composer-timeline-wrap">
+        <div id="composerTimeline" class="composer-timeline"></div>
+      </div>
+
+      <div class="composer-actions">
+        <button id="composerPlay" class="btn-gold">▶ Tocar progressão</button>
+        <button id="composerArp" class="btn-ghost">♪ Arpejar</button>
+        <button id="composerClear" class="btn-ghost subtle">limpar</button>
+        <div class="bpm-row inline">
+          <span class="ctrl-label">bpm</span>
+          <input id="composerBpm" type="range" min="40" max="200" value="90" aria-label="Batidas por minuto">
+          <span id="composerBpmVal" class="bpm-val">90</span>
+        </div>
+      </div>
+
+      <h4 class="pal-title">Tríades diatônicas</h4>
+      <div id="composerPalette" class="composer-palette"></div>
+      <h4 class="pal-title dim">Tétrades (7ª)</h4>
+      <div id="composerExtras" class="composer-palette"></div>
+    </section>
+
+  </main>
+
+  <button id="audioFab" type="button" class="audio-fab" title="ativar som" aria-pressed="false"
+    aria-label="Ativar ou desativar som">
+    <span class="audio-fab-dot" aria-hidden="true"></span>
+    <span id="audioFabLabel" class="audio-fab-label">Áudio off</span>
+  </button>
+
+  <footer class="foot">
+    <div class="foot-cols">
+      <div>
+        <div class="foot-title">Sonzera</div>
+        <p class="foot-txt">Um estúdio silencioso onde a teoria encontra o ouvido. Construído com Tone.js e Tonal.js —
+          som de qualidade, teoria correta, sem rastreio.</p>
+      </div>
+      <div>
+        <div class="foot-title">Seções</div>
+        <ul class="foot-list">
+          <li>Intervalos &amp; Teclado</li>
+          <li>Escalas &amp; Modos</li>
+          <li>Acordes &amp; Progressões</li>
+          <li>Violão &amp; Círculo de Quintas</li>
+          <li>Ritmos &amp; Treino Auditivo</li>
+        </ul>
+      </div>
+      <div>
+        <div class="foot-title">Coda</div>
+        <p class="foot-txt">“A música é a aritmética dos sons, como a óptica é a geometria da luz.” — Debussy</p>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>© Sonzera · 2026</span>
+    </div>
+  </footer>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/tonal@6.4.1/browser/tonal.min.js"
+    integrity="sha384-45vmVR6U8pG/iD9bS+ojU8qVYp3RoXyg8I0djInoJmTwsbiXtUo6Lf+z/qN5gHug"
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/tone@15.0.4/build/Tone.js"
+    integrity="sha384-42gWnBr2Y4rlMy2jxjddYshP4nyV5xDDAi+roXFrK7tUpQlSWw7b/RgK4Qj7ozxW"
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script defer src="js/theme.js"></script>
+  <script defer src="js/theory.js"></script>
+  <script defer src="js/audio.js"></script>
+  <script defer src="js/rhythms.js"></script>
+  <script defer src="js/progressions.js"></script>
+  <script defer src="js/guitar.js"></script>
+  <script defer src="js/eartraining.js"></script>
+  <script defer src="js/app.js"></script>
+
+</body>
+
+</html>
