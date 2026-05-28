@@ -31,6 +31,7 @@ function render() {
     case 'progressions': renderProgressions(); break;
     case 'guitar': renderGuitar(); break;
     case 'circle': renderCircle(); renderKeySig(); break;
+    case 'campo': renderCampo(); break;
     case 'composer': renderComposerPalette(); renderComposerTimeline(); break;
   }
 }
@@ -336,7 +337,9 @@ function renderDiatonic() {
       <div class="chord-notes">${t.notes.map(n => fmt(n)).join(' · ')}</div>
       <div class="chord-quality">${esc(t.quality)}</div>
       ${notes7Txt}
-      <span class="chord-play-hint">▶</span>`;
+      <span class="chord-play-hint">▶</span>
+      <button type="button" class="card-shapes" data-shapes
+        aria-label="Ver formas de ${esc(t.triadSym)} no violão">⌗ formas</button>`;
     grid.appendChild(card);
   });
 }
@@ -354,7 +357,9 @@ function renderChords(flat) {
       <div class="chord-name">${fmt(S.root)}${esc(chord.sym)}</div>
       <div class="chord-notes">${cn.map(n => fmt(n)).join(' · ')}</div>
       <div class="chord-quality">${esc(chord.q)}</div>
-      <span class="chord-play-hint">▶</span>`;
+      <span class="chord-play-hint">▶</span>
+      <button type="button" class="card-shapes" data-shapes
+        aria-label="Ver formas de ${esc(fmt(S.root) + chord.sym)} no violão">⌗ formas</button>`;
     grid.appendChild(card);
   });
 }
@@ -378,9 +383,23 @@ function renderGuitar() {
   document.getElementById('tuningDisplay').textContent =
     tnotes.map(s => fmt(s.replace(/\d/, ''))).join(' · ');
   const canvas = document.getElementById('fretboardCanvas');
-  drawFretboard(canvas, S.root, IV, isFlat(), tnotes);
+  const an = Campo.analyzer.on;
+  drawFretboard(canvas, S.root, IV, isFlat(), tnotes,
+    an ? { analyzer: true, frets: Campo.analyzer.frets } : null);
   bindFretboardClicks(canvas, tnotes);
+  syncAnalyzerUI();
   renderDiagrams();
+}
+
+function syncAnalyzerUI() {
+  const on = Campo.analyzer.on;
+  const btn = document.getElementById('analyzerToggle');
+  btn.classList.toggle('active', on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  document.getElementById('analyzerClear').hidden = !on;
+  document.getElementById('analyzerHint').hidden = !on;
+  const res = document.getElementById('analyzerResult');
+  if (!on) { res.hidden = true; res.innerHTML = ''; }
 }
 
 function bindFretboardClicks(canvas, tnotes) {
@@ -388,16 +407,66 @@ function bindFretboardClicks(canvas, tnotes) {
     const { x, y, W, H } = canvasLogicalXY(canvas, e);
     const ML = 58, MR = 22, MT = 34, MB = 34, STRINGS = 6, FRETS = 17;
     const fW = (W - ML - MR) / FRETS, sH = (H - MT - MB) / (STRINGS - 1);
-    if (x < ML || x > W - MR || y < MT - 16 || y > H - MB + 16) return;
-    const fret = Math.floor((x - ML) / fW) + 1;
+    if (y < MT - 16 || y > H - MB + 16) return;
     const si = Math.round((y - MT) / sH);
     const stringIdx = STRINGS - 1 - si;
     if (stringIdx < 0 || stringIdx >= STRINGS) return;
+
+    if (Campo.analyzer.on) {
+      if (x < ML) {
+        Campo.toggleStringGutter(stringIdx);
+      } else if (x <= W - MR) {
+        const fret = Math.floor((x - ML) / fW) + 1;
+        if (fret < 1 || fret > FRETS) return;
+        Campo.setAnalyzerFret(stringIdx, fret);
+      } else return;
+      drawFretboard(canvas, S.root, IV, isFlat(), tnotes,
+        { analyzer: true, frets: Campo.analyzer.frets });
+      Campo.runAnalysis(tnotes);
+      return;
+    }
+
+    if (x < ML || x > W - MR) return;
+    const fret = Math.floor((x - ML) / fW) + 1;
     const { n: openNote, o: openOct } = parseNote(tnotes[stringIdx]);
     const noteIdxAt = (noteIdx(openNote) + fret) % 12;
     const octOffset = Math.floor((noteIdx(openNote) + fret) / 12);
     SonAudio.playNote(CHROMATIC[noteIdxAt], openOct + octOffset, 0, 1.0, 0.55);
   };
+}
+
+document.getElementById('analyzerToggle').onclick = () => {
+  Campo.analyzer.on = !Campo.analyzer.on;
+  if (Campo.analyzer.on) {
+    Campo.resetAnalyzer(TUNINGS[S.tuning].length);
+    Campo.ensureLibs().catch(() => { });
+  }
+  renderGuitar();
+};
+document.getElementById('analyzerClear').onclick = () => {
+  Campo.resetAnalyzer(TUNINGS[S.tuning].length);
+  renderGuitar();
+  Campo.runAnalysis(TUNINGS[S.tuning]);
+};
+
+// ── Campo Harmônico ──────────────────────────────────────────
+function renderCampo() {
+  const flat = isFlat();
+  document.querySelectorAll('[data-campo-type]').forEach(b =>
+    b.classList.toggle('active', b.dataset.campoType === Campo.state.type));
+  document.querySelectorAll('[data-campo-seventh]').forEach(b =>
+    b.classList.toggle('active', (b.dataset.campoSeventh === '1') === Campo.state.seventh));
+  Campo.renderWheel(S.root, flat);
+  Campo.renderField(S.root, flat);
+  Campo.renderSequences();
+}
+
+function openDegreeShapes(idx) {
+  const c = Campo.chordAtDegree(S.root, isFlat(), idx);
+  if (!c) return;
+  SonAudio.strumVoiced(c.chordRoot, S.octave + (c.rootOctOffset || 0), c.semis,
+    spd(1.6), true, spdSpread(0.02));
+  Campo.openShapes(c.chordRoot, c.sym, c.display);
 }
 
 function renderDiagrams() {
@@ -847,8 +916,9 @@ function switchTab(name) {
   if (name === 'scales') renderScaleTab();
   if (name === 'chords') renderChords(isFlat());
   if (name === 'progressions') renderProgressions();
-  if (name === 'guitar') renderGuitar();
+  if (name === 'guitar') { renderGuitar(); Campo.ensureLibs().catch(() => { }); }
   if (name === 'circle') { renderCircle(); renderKeySig(); }
+  if (name === 'campo') { renderCampo(); Campo.ensureLibs().catch(() => { }); }
   if (name === 'composer') { renderComposerPalette(); renderComposerTimeline(); }
   if (name === 'ear' && !EarTraining.getScore().total) earNext();
   if (name !== 'rhythm') Rhythm.stop();
@@ -902,6 +972,7 @@ document.getElementById('audioFab').onclick = handleAudioToggle;
 window.addEventListener('themechange', () => {
   if (S.activeTab === 'guitar') renderGuitar();
   if (S.activeTab === 'circle') renderCircle();
+  if (S.activeTab === 'campo') Campo.renderWheel(S.root, isFlat());
 });
 
 function bindDelegation() {
@@ -943,22 +1014,56 @@ function bindDelegation() {
     SonAudio.playNote(note, oct, 0, 0.8, 0.6);
   });
 
-  on('diatonicGrid', 'click', '.chord-card', m => {
+  on('diatonicGrid', 'click', '.chord-card', (m, e) => {
     if (m.dataset.diatonicIdx == null) return;
     const meta = SCALES[S.scale];
     if (!meta || meta.i.length < 7) return;
     const t = diatonicTriads(S.root, meta.i, isFlat())[+m.dataset.diatonicIdx];
     if (!t) return;
+    if (e.target.closest('.card-shapes')) {
+      const suffix = t.triadSym.slice(fmt(t.chordRoot).length);
+      Campo.openShapes(t.chordRoot, suffix, t.triadSym);
+      return;
+    }
     SonAudio.strumVoiced(t.chordRoot, S.octave + t.rootOctOffset, t.triadSemis, spd(1.8), true, spdSpread(0.02));
   });
 
-  const playChordCard = m => {
+  on('chordsGrid', 'click', '.chord-card', (m, e) => {
+    if (m.dataset.chordIdx == null) return;
+    const chord = CHORDS[+m.dataset.chordIdx];
+    if (!chord) return;
+    if (e.target.closest('.card-shapes')) {
+      Campo.openShapes(S.root, chord.sym, fmt(S.root) + chord.sym);
+      return;
+    }
+    SonAudio.strumVoiced(S.root, S.octave, chord.f, spd(2.0), true, spdSpread(0.02));
+  });
+  on('diagramGrid', 'click', '.diagram-card', m => {
     if (m.dataset.chordIdx == null) return;
     const chord = CHORDS[+m.dataset.chordIdx];
     if (chord) SonAudio.strumVoiced(S.root, S.octave, chord.f, spd(2.0), true, spdSpread(0.02));
-  };
-  on('chordsGrid', 'click', '.chord-card', playChordCard);
-  on('diagramGrid', 'click', '.diagram-card', playChordCard);
+  });
+
+  // ── Campo Harmônico ──
+  document.querySelectorAll('[data-campo-type]').forEach(b => {
+    b.onclick = () => { Campo.state.type = b.dataset.campoType; renderCampo(); };
+  });
+  document.querySelectorAll('[data-campo-seventh]').forEach(b => {
+    b.onclick = () => { Campo.state.seventh = b.dataset.campoSeventh === '1'; renderCampo(); };
+  });
+  document.getElementById('campoCanvas').addEventListener('click', function (e) {
+    const d = Campo.wheelHit(this, e, S.root);
+    if (d) openDegreeShapes(d.idx);
+  });
+  on('campoField', 'click', '.campo-card', m => {
+    if (m.dataset.degreeIdx != null) openDegreeShapes(+m.dataset.degreeIdx);
+  });
+  on('campoSequences', 'click', '.campo-seq', m => {
+    if (m.dataset.seqIdx != null) Campo.showSequence(S.root, isFlat(), +m.dataset.seqIdx);
+  });
+  on('campoSeqDetail', 'click', '.campo-seq-chord', m => {
+    if (m.dataset.degreeIdx != null) openDegreeShapes(+m.dataset.degreeIdx);
+  });
 
   on('progGrid', 'click', '.prog-card', m => {
     if (m.dataset.progIdx != null) playProgression(+m.dataset.progIdx);
@@ -1012,6 +1117,7 @@ function init() {
   buildTuning();
   buildRhythmGrid();
   bindDelegation();
+  Campo.bind();
   render();
 }
 init();

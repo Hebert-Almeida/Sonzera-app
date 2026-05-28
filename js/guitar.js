@@ -64,7 +64,9 @@ const getFretColors = cssVarCache({
   inkRoot:  ['--note-ink-root',        '#ffffff'],
 });
 
-function drawFretboard(canvas, root, intervals, flat, tuning){
+function drawFretboard(canvas, root, intervals, flat, tuning, opts){
+  opts = opts || {};
+  const analyzer = opts.analyzer === true;
   const { ctx, W, H } = setupHiDPI(canvas);
   const STRINGS = 6, FRETS = 17;
   const ML=58, MR=22, MT=34, MB=34;
@@ -114,6 +116,14 @@ function drawFretboard(canvas, root, intervals, flat, tuning){
     ctx.fillText(fmt(openNote), ML-8, y);
   });
 
+  if (analyzer){
+    drawAnalyzerOverlay(ctx, { ML, MT, MB, fW, sH, STRINGS, H },
+      opts.frets || [], tuning,
+      { root: C_ROOT, dot: C_DOT, ink: C_INK, dim: C_DIM, label: C_LABEL });
+    ctx.textBaseline = 'alphabetic';
+    return;
+  }
+
   tuning.forEach((sn,si)=>{
     const {n:openNote} = parseNote(sn);
     const y = MT + (STRINGS-1-si)*sH;
@@ -136,6 +146,36 @@ function drawFretboard(canvas, root, intervals, flat, tuning){
     }
   });
   ctx.textBaseline = 'alphabetic';
+}
+
+function drawAnalyzerOverlay(ctx, geom, frets, tuning, C){
+  const { ML, MT, MB, fW, sH, STRINGS, H } = geom;
+  const GUT = ML - 40;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  tuning.forEach((sn, si)=>{
+    const y = MT + (STRINGS-1-si)*sH;
+    const f = frets[si];
+    if (f == null){
+      ctx.fillStyle = C.dim;
+      ctx.font = '700 15px JetBrains Mono,monospace';
+      ctx.fillText('×', GUT, y);
+      return;
+    }
+    const { n: openNote } = parseNote(sn);
+    const ni = (noteIdx(openNote) + f) % 12;
+    const name = fmt(CHROMATIC[ni]);
+    if (f === 0){
+      ctx.beginPath(); ctx.arc(GUT, y, 8, 0, Math.PI*2);
+      ctx.lineWidth = 2; ctx.strokeStyle = C.root; ctx.stroke();
+      return;
+    }
+    const cx = ML + (f-0.5)*fW;
+    ctx.beginPath(); ctx.arc(cx, y, 14, 0, Math.PI*2);
+    ctx.fillStyle = C.root; ctx.fill();
+    ctx.fillStyle = C.ink;
+    ctx.font = '700 12px JetBrains Mono,monospace';
+    ctx.fillText(name, cx, y);
+  });
 }
 
 function buildChordDiagram(frets, rootNote, tuning, flat=false){

@@ -141,13 +141,15 @@
       tabindex="-1" data-tab="guitar"><span class="tab-num" aria-hidden="true">v.</span>Violão</button>
     <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-circle" id="tabbtn-circle"
       tabindex="-1" data-tab="circle"><span class="tab-num" aria-hidden="true">vi.</span>Círculo</button>
+    <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-campo" id="tabbtn-campo"
+      tabindex="-1" data-tab="campo"><span class="tab-num" aria-hidden="true">vii.</span>Campo</button>
     <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-rhythm" id="tabbtn-rhythm"
-      tabindex="-1" data-tab="rhythm"><span class="tab-num" aria-hidden="true">vii.</span>Ritmos</button>
+      tabindex="-1" data-tab="rhythm"><span class="tab-num" aria-hidden="true">viii.</span>Ritmos</button>
     <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-ear" id="tabbtn-ear"
-      tabindex="-1" data-tab="ear"><span class="tab-num" aria-hidden="true">viii.</span>Treino</button>
+      tabindex="-1" data-tab="ear"><span class="tab-num" aria-hidden="true">ix.</span>Treino</button>
     <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-composer"
       id="tabbtn-composer" tabindex="-1" data-tab="composer"><span class="tab-num"
-        aria-hidden="true">ix.</span>Compositor</button>
+        aria-hidden="true">x.</span>Compositor</button>
   </nav>
 
   <main class="stage">
@@ -227,6 +229,14 @@
         <canvas id="fretboardCanvas" width="1200" height="320"></canvas>
       </div>
 
+      <div class="analyzer-bar">
+        <button id="analyzerToggle" type="button" class="btn-ghost" aria-pressed="false">⌕ Analisador de acordes</button>
+        <button id="analyzerClear" type="button" class="btn-ghost subtle" hidden>limpar</button>
+        <span id="analyzerHint" class="analyzer-hint" hidden>Toque nas casas do braço para montar um acorde; toque à
+          esquerda da pestana para abrir/abafar a corda.</span>
+      </div>
+      <div id="analyzerResult" class="analyzer-result" hidden></div>
+
       <header class="panel-head sub">
         <h3 class="panel-title small">Diagramas CAGED</h3>
         <p class="panel-desc">Melhores digitações encontradas a partir das formas clássicas.</p>
@@ -244,6 +254,50 @@
         <canvas id="circleCanvas" width="400" height="400"></canvas>
         <div id="keysigPanel" class="keysig-panel"></div>
       </div>
+    </section>
+
+    <section id="tab-campo" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-campo">
+      <header class="panel-head">
+        <h2 class="panel-title">Campo Harmônico <span>— os acordes que nascem de cada tom</span></h2>
+        <p class="panel-desc">A roda mostra os sete acordes diatônicos da raiz escolhida — como um círculo de
+          quintas, mas dos acordes da tonalidade. Clique em qualquer acorde para ver <strong>todas as formas</strong>
+          no violão (dados do chords-db, desenhados com SVGuitar).</p>
+      </header>
+
+      <div class="campo-controls">
+        <div class="ctrl-block">
+          <span class="ctrl-label">tonalidade</span>
+          <div class="pill-row inline">
+            <button class="pill active" type="button" data-campo-type="maior">Maior</button>
+            <button class="pill" type="button" data-campo-type="menor">Menor</button>
+          </div>
+        </div>
+        <div class="ctrl-block">
+          <span class="ctrl-label">acordes</span>
+          <div class="pill-row inline">
+            <button class="pill active" type="button" data-campo-seventh="0">Tríades</button>
+            <button class="pill" type="button" data-campo-seventh="1">Tétrades (7ª)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="campo-layout">
+        <div class="campo-wheel-wrap">
+          <canvas id="campoCanvas" width="440" height="440" aria-label="Roda do campo harmônico"></canvas>
+        </div>
+        <div class="campo-side">
+          <span class="ctrl-label">acordes do campo</span>
+          <div id="campoField" class="campo-field"></div>
+        </div>
+      </div>
+
+      <header class="panel-head sub">
+        <h3 class="panel-title small">Sequências comuns</h3>
+        <p class="panel-desc">Clique numa sequência para ver os acordes em comum; clique num acorde para ver suas
+          formas no braço.</p>
+      </header>
+      <div id="campoSequences" class="campo-seq-grid"></div>
+      <div id="campoSeqDetail" class="campo-seq-detail"></div>
     </section>
 
     <section id="tab-rhythm" class="tab-panel" role="tabpanel">
@@ -343,6 +397,21 @@
 
   </main>
 
+  <div id="shapesModal" class="shapes-modal" hidden role="dialog" aria-modal="true"
+    aria-labelledby="shapesModalTitle">
+    <div class="shapes-modal-backdrop" data-shapes-close></div>
+    <div class="shapes-modal-panel" role="document">
+      <header class="shapes-modal-head">
+        <div>
+          <div id="shapesModalTitle" class="shapes-modal-title"></div>
+          <div id="shapesModalNotes" class="shapes-modal-notes"></div>
+        </div>
+        <button id="shapesModalClose" type="button" class="shapes-modal-close" aria-label="Fechar">×</button>
+      </header>
+      <div id="shapesModalBody" class="shapes-modal-body"></div>
+    </div>
+  </div>
+
   <button id="audioFab" type="button" class="audio-fab" title="ativar som" aria-pressed="false"
     aria-label="Ativar ou desativar som">
     <span class="audio-fab-dot" aria-hidden="true"></span>
@@ -390,6 +459,7 @@
   <script defer src="js/progressions.js"></script>
   <script defer src="js/guitar.js"></script>
   <script defer src="js/eartraining.js"></script>
+  <script defer src="js/campo.js"></script>
   <script defer src="js/app.js"></script>
 
 </body>
