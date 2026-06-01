@@ -225,9 +225,17 @@
         <div id="tuningDisplay" class="tuning-display"></div>
       </div>
 
+      <div class="solo-bar">
+        <button id="soloToggle" type="button" class="btn-ghost" aria-pressed="false">♪ Escalas para solo</button>
+        <span class="ctrl-label solo-ctrl-label" data-solo-ctrl hidden>escala</span>
+        <select id="soloScale" class="solo-select" data-solo-ctrl hidden aria-label="Escala para solo"></select>
+        <span id="soloHint" class="analyzer-hint" hidden>Notas da escala iluminadas no braço — cada cor é um grau (tônica, 3ª, 5ª…).</span>
+      </div>
+
       <div class="fretboard-wrap">
         <canvas id="fretboardCanvas" width="1200" height="320"></canvas>
       </div>
+      <div id="fretboardLegend" class="fretboard-legend" aria-label="Legenda dos intervalos no braço"></div>
 
       <div class="analyzer-bar">
         <button id="analyzerToggle" type="button" class="btn-ghost" aria-pressed="false">⌕ Analisador de acordes</button>

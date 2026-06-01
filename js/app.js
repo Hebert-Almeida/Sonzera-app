@@ -9,6 +9,8 @@ const S = {
   composer: [],
   composerBpm: 90,
   speed: 1,
+  soloOn: false,
+  soloScale: 'Pentatônica Menor',
 };
 
 function isFlat() { return S.acc === 'flat'; }
@@ -384,11 +386,116 @@ function renderGuitar() {
     tnotes.map(s => fmt(s.replace(/\d/, ''))).join(' · ');
   const canvas = document.getElementById('fretboardCanvas');
   const an = Campo.analyzer.on;
-  drawFretboard(canvas, S.root, IV, isFlat(), tnotes,
+  const intervals = S.soloOn ? scaleIntervals(S.soloScale) : IV;
+  drawFretboard(canvas, S.root, intervals, isFlat(), tnotes,
     an ? { analyzer: true, frets: Campo.analyzer.frets } : null);
   bindFretboardClicks(canvas, tnotes);
   syncAnalyzerUI();
+  syncSoloUI();
+  renderFretboardLegend(intervals);
   renderDiagrams();
+}
+
+function scaleIntervals(scaleName) {
+  const meta = SCALES[scaleName];
+  if (!meta) return IV;
+  const set = new Set(meta.i);
+  set.add(0);
+  return IV.filter(iv => set.has(iv.st % 12));
+}
+
+const SCALE_DEGREE_LABEL = {
+  0: '1', 1: '♭2', 2: '2', 3: '♭3', 4: '3', 5: '4',
+  6: '♭5', 7: '5', 8: '♭6', 9: '6', 10: '♭7', 11: '7',
+};
+
+const TONAL_FUNCTIONS = [
+  { key: 'tonic',   label: 'Tônica',       semis: [0, 3, 4, 8, 9] },
+  { key: 'subdom',  label: 'Subdominante', semis: [1, 2, 5, 6] },
+  { key: 'dom',     label: 'Dominante',    semis: [7, 10] },
+  { key: 'leading', label: 'Sensível',     semis: [11] },
+];
+const TONAL_FN_BY_SEMI = (() => {
+  const m = {};
+  TONAL_FUNCTIONS.forEach(f => f.semis.forEach(s => { m[s] = f.key; }));
+  return m;
+})();
+
+function renderFretboardLegend(intervals) {
+  const el = document.getElementById('fretboardLegend');
+  if (!el) return;
+  el.innerHTML = '';
+  const flat = isFlat();
+  const colorBySemi = {};
+  const seen = new Set();
+  const presentSemis = [];
+  intervals.forEach(iv => {
+    const st = iv.st % 12;
+    if (seen.has(st)) return;
+    seen.add(st);
+    colorBySemi[st] = iv.c;
+    presentSemis.push(st);
+  });
+
+  TONAL_FUNCTIONS.forEach(fn => {
+    const semis = fn.semis.filter(s => seen.has(s));
+    if (!semis.length) return;
+    const group = document.createElement('div');
+    group.className = 'legend-group fn-' + fn.key;
+    const title = document.createElement('span');
+    title.className = 'legend-group-title';
+    title.textContent = fn.label;
+    group.appendChild(title);
+    semis.forEach(st => {
+      const note = getNote(S.root, st, flat);
+      const isRoot = st === 0;
+      const chip = document.createElement('span');
+      chip.className = 'legend-chip' + (isRoot ? ' root' : '');
+      chip.style.setProperty('--lc', colorBySemi[st]);
+      chip.innerHTML =
+        `<span class="legend-dot"></span>` +
+        `<span class="legend-deg">${SCALE_DEGREE_LABEL[st] || st}</span>` +
+        `<span class="legend-note">${fmt(note)}</span>`;
+      group.appendChild(chip);
+    });
+    el.appendChild(group);
+  });
+}
+
+function syncSoloUI() {
+  const btn = document.getElementById('soloToggle');
+  btn.classList.toggle('active', S.soloOn);
+  btn.setAttribute('aria-pressed', S.soloOn ? 'true' : 'false');
+  document.querySelectorAll('[data-solo-ctrl]').forEach(el => { el.hidden = !S.soloOn; });
+  document.getElementById('soloHint').hidden = !S.soloOn;
+  const sel = document.getElementById('soloScale');
+  if (sel.value !== S.soloScale) sel.value = S.soloScale;
+}
+
+function buildSoloScaleSelector() {
+  const sel = document.getElementById('soloScale');
+  if (!sel || sel.dataset.built) return;
+  const byCat = {};
+  Object.entries(SCALES).forEach(([name, meta]) => {
+    (byCat[meta.cat] = byCat[meta.cat] || []).push(name);
+  });
+  Object.keys(byCat).forEach(cat => {
+    const og = document.createElement('optgroup');
+    og.label = cat;
+    byCat[cat].forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      if (name === S.soloScale) opt.selected = true;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  sel.dataset.built = '1';
+  sel.addEventListener('change', () => {
+    S.soloScale = sel.value;
+    renderGuitar();
+  });
 }
 
 function syncAnalyzerUI() {
@@ -447,6 +554,12 @@ document.getElementById('analyzerClear').onclick = () => {
   Campo.resetAnalyzer(TUNINGS[S.tuning].length);
   renderGuitar();
   Campo.runAnalysis(TUNINGS[S.tuning]);
+};
+
+document.getElementById('soloToggle').onclick = () => {
+  S.soloOn = !S.soloOn;
+  if (S.soloOn) buildSoloScaleSelector();
+  renderGuitar();
 };
 
 // ── Campo Harmônico ──────────────────────────────────────────
@@ -1115,6 +1228,7 @@ function init() {
   buildOctaveRow();
   buildSpeedControl();
   buildTuning();
+  buildSoloScaleSelector();
   buildRhythmGrid();
   bindDelegation();
   Campo.bind();
